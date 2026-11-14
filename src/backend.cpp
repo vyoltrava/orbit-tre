@@ -443,7 +443,7 @@ QString Backend::hyprlandBlock() const {
     const bool mouse = m_key.startsWith("mouse:");
     block += QString("o.bind(\"%1\", \"Orbit menu\", \"orbit toggle\", %2)\n")
                  .arg(activationCombo(), mouse ? "{ mouse = true }" : "{ }");
-    block += "o.window(\"orbit\", { float = true, border_size = 0 })\n";
+    block += "o.window(\"orbit\", { float = true, border_size = 0, size = \"100% 100%\" })\n";
     block += kManagedEnd;
     return block;
 }
@@ -542,45 +542,56 @@ void Backend::attachWindow(QQuickWindow *window, bool openSettings) {
     window->setScreen(screen);
     window->show();
 
-    if (havePointer && !m_hyprctl.isEmpty()) {
-        // Wayland apps cannot place themselves, so ask the compositor, once
-        // the window is mapped, to sit exactly on this monitor.
-        const QString at = QString("exact %1 %2,class:orbit").arg(geometry.x()).arg(geometry.y());
-        auto *timer = new QTimer(window);
-        int attempts = 0;
-        timer->setInterval(40);
-        QObject::connect(timer, &QTimer::timeout, window, [this, window, timer, at, openSettings, &attempts]() mutable {
-            QProcess clients;
-            clients.start(m_hyprctl, {"-j", "clients"});
-            if (clients.waitForFinished(300)) {
-                const QString output = QString::fromUtf8(clients.readAllStandardOutput());
-                if (output.contains("\"class\": \"orbit\"") || output.contains("\"class\":\"orbit\"")) {
-                    QProcess::startDetached(m_hyprctl, {"dispatch", "movewindowpixel", at});
-                    timer->stop();
-                    m_placed = true;
-                    emit placementChanged();
-                    if (openSettings)
-                        QMetaObject::invokeMethod(window, "openSettingsPage");
-                    timer->deleteLater();
-                    return;
-                }
-            }
-            if (++attempts > 40) {
-                timer->stop();
-                m_placed = true; // fall through and show centered-ish anyway
-                emit placementChanged();
-                if (openSettings)
-                    QMetaObject::invokeMethod(window, "openSettingsPage");
-                timer->deleteLater();
-            }
-        });
-        timer->start();
-    } else {
+    if (!havePointer || m_hyprctl.isEmpty()) {
         m_placed = true;
         emit placementChanged();
         if (openSettings)
             QMetaObject::invokeMethod(window, "openSettingsPage");
+        return;
     }
+
+    // Wayland apps cannot place themselves, and Hyprland opens the overlay
+    // wherever it likes. So once the window is mapped, read its real global
+    // position from hyprctl and put the ring at the pointer relative to it —
+    // wherever the compositor dropped the window, the ring lands on the cursor.
+    auto *timer = new QTimer(window);
+    int attempts = 0;
+    timer->setInterval(40);
+    QObject::connect(timer, &QTimer::timeout, window,
+                     [this, window, timer, globalX, globalY, openSettings, &attempts]() mutable {
+        QProcess clients;
+        clients.start(m_hyprctl, {"-j", "clients"});
+        if (clients.waitForFinished(300)) {
+            const QJsonDocument document = QJsonDocument::fromJson(clients.readAllStandardOutput());
+            for (const QJsonValue &value : document.array()) {
+                const QJsonObject client = value.toObject();
+                if (client.value("class").toString() != "orbit")
+                    continue;
+                const QJsonArray at = client.value("at").toArray();
+                if (at.size() < 2)
+                    break;
+                m_cursorX = globalX - at.at(0).toDouble();
+                m_cursorY = globalY - at.at(1).toDouble();
+                timer->stop();
+                timer->deleteLater();
+                m_placed = true;
+                emit placementChanged();
+                if (openSettings)
+                    QMetaObject::invokeMethod(window, "openSettingsPage");
+                return;
+            }
+        }
+        if (++attempts > 40) {
+            // Give up on the exact spot; the monitor-relative fallback stands.
+            timer->stop();
+            timer->deleteLater();
+            m_placed = true;
+            emit placementChanged();
+            if (openSettings)
+                QMetaObject::invokeMethod(window, "openSettingsPage");
+        }
+    });
+    timer->start();
 }
 
 void Backend::quitApp() {
