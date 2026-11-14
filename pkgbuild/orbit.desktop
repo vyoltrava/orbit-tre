@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Orbit
+Comment=Radial launcher at the pointer: apps and nested folders in one orbit
+Name[ru]=Orbit
+Comment[ru]=Радиальное меню у курсора: приложения и вложенные папки на одной орбите
+Exec=orbit settings
+Icon=orbit
+Terminal=false
+Categories=Utility;
+StartupWMClass=orbit

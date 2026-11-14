@@ -1,0 +1,222 @@
+import QtQuick
+import QtQuick.Controls
+
+// The radial menu: cells evenly around the pointer (first on top), folders
+// fly the next ring out, the center is Settings on the root and Back inside.
+Item {
+    id: root
+
+    readonly property real cx: win.cx
+    readonly property real cy: win.cy
+    readonly property int count: backend.items.length
+    readonly property real ringRadius: Math.max(150, Math.min(250, Math.min(win.width, win.height) / 2 - 110))
+    readonly property int cellSize: count > 10 ? 56 : 66
+    property int launchingIndex: -1
+    // The action that runs after the ring has folded away (enter/back/launch).
+    property var pendingCall: null
+
+    // Fade the whole overlay in once the compositor has placed the window.
+    opacity: backend.placed && !win.closing ? 1 : 0
+    Behavior on opacity { NumberAnimation { duration: 160 } }
+
+    // Clicking anywhere outside the ring closes, like every launcher.
+    MouseArea {
+        anchors.fill: parent
+        onClicked: (mouse) => {
+            const dx = mouse.x - root.cx, dy = mouse.y - root.cy
+            if (Math.hypot(dx, dy) > root.ringRadius + 70)
+                win.closeOrbit()
+        }
+    }
+
+    function foldAwayThen(call) {
+        root.pendingCall = call
+        foldAnim.restart()
+    }
+
+    SequentialAnimation {
+        id: foldAnim
+        NumberAnimation { target: ringContent; property: "scale"; to: 0.6; duration: 130; easing.type: Easing.InQuad }
+        NumberAnimation { target: ringContent; property: "opacity"; to: 0; duration: 90 }
+        ScriptAction { script: { root.pendingCall(); root.pendingCall = null } }
+        onFinished: { ringContent.scale = 1; ringContent.opacity = 1 }
+    }
+
+    Item {
+        id: ringContent
+        width: 1; height: 1 // only a container; cells position themselves absolutely
+        x: root.cx
+        y: root.cy
+
+        // Center button: Settings at the root, Back inside a folder.
+        AbstractButton {
+            id: center
+            width: 88; height: 88
+            x: -44; y: -44
+            hoverEnabled: true
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
+            onClicked: backend.breadcrumb.length > 1
+                        ? root.foldAwayThen(() => { backend.selectBreadcrumb(backend.breadcrumb.length - 2) })
+                        : win.openSettingsPage()
+
+            background: Rectangle {
+                radius: width / 2
+                color: center.hovered ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.35)
+                border.width: 2
+                border.color: theme.accent
+                Behavior on color { ColorAnimation { duration: 120 } }
+            }
+            contentItem: Item {
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Image {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        source: "image://icons/" + (backend.breadcrumb.length > 1 ? "go-previous" : "preferences-system")
+                        sourceSize: Qt.size(30, 30)
+                        width: 30; height: 30
+                        fillMode: Image.PreserveAspectFit
+                    }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: backend.breadcrumb.length > 1 ? qsTr("Back") : qsTr("Settings")
+                        font.pixelSize: 10
+                        color: "#ffffff"
+                    }
+                }
+            }
+        }
+
+        // The current folder name under the center, when inside one.
+        Label {
+            visible: backend.breadcrumb.length > 1
+            y: 56
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: backend.currentName
+            font.pixelSize: 12
+            font.bold: true
+            color: "#ffffff"
+        }
+
+        Repeater {
+            model: backend.items
+
+            delegate: AbstractButton {
+                id: cell
+
+                required property var modelData
+                required property int index
+
+                readonly property real angle: -Math.PI / 2 + index * 2 * Math.PI / Math.max(root.count, 1)
+                readonly property bool glowing: (cell.hovered || root.launchingIndex === index) && !win.closing
+
+                x: root.ringRadius * Math.cos(angle) - width / 2
+                y: root.ringRadius * Math.sin(angle) - height / 2
+                width: root.cellSize + 8
+                height: root.cellSize + 8
+                hoverEnabled: true
+                HoverHandler { cursorShape: Qt.PointingHandCursor }
+
+                // Pop-in, staggered like the web orbit (0.34, 1.56, 0.64, 1).
+                property real pop: 0
+                scale: pop
+                SequentialAnimation {
+                    running: true
+                    PauseAnimation { duration: cell.index * 25 }
+                    NumberAnimation { target: cell; property: "pop"; from: 0; to: 1; duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.6 }
+                }
+
+                onClicked: {
+                    if (modelData.folder) {
+                        root.foldAwayThen(() => backend.enter(index))
+                    } else {
+                        root.launchingIndex = index
+                        launchTimer.start()
+                    }
+                }
+
+                Timer {
+                    id: launchTimer
+                    interval: 120
+                    onTriggered: {
+                        backend.launch(cell.index)
+                        win.closeOrbit()
+                    }
+                }
+
+                background: Rectangle {
+                    anchors.centerIn: parent
+                    width: root.cellSize
+                    height: root.cellSize
+                    radius: width / 2
+                    color: cell.glowing ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(0.05, 0.05, 0.07, 0.72)
+                    border.width: cell.glowing ? 2 : 1
+                    border.color: cell.glowing ? theme.accent : Qt.rgba(1, 1, 1, 0.18)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Behavior on border.color { ColorAnimation { duration: 120 } }
+                }
+
+                contentItem: Item {
+                    Image {
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: -8
+                        source: "image://icons/" + encodeURIComponent(modelData.icon || "application-x-executable")
+                        sourceSize: Qt.size(32, 32)
+                        width: 32; height: 32
+                        fillMode: Image.PreserveAspectFit
+                    }
+                    // Folder cells get a small count badge on the edge.
+                    Rectangle {
+                        visible: modelData.folder && modelData.count > 0
+                        width: 20; height: 20; radius: 10
+                        x: root.cellSize - 18
+                        y: root.cellSize - 26
+                        color: theme.accent
+                        Label {
+                            anchors.centerIn: parent
+                            text: modelData.count > 9 ? "9+" : modelData.count
+                            font.pixelSize: 10
+                            font.bold: true
+                            color: theme.accentForeground
+                        }
+                    }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: root.cellSize + 10
+                        width: root.cellSize + 16
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        text: modelData.name
+                        font.pixelSize: 11
+                        color: "#ffffff"
+                        style: Text.Outline
+                        styleColor: Qt.rgba(0, 0, 0, 0.55)
+                    }
+                }
+
+                // The "ping" ring on the hovered cell, straight from orbit2.
+                Rectangle {
+                    visible: cell.hovered && !modelData.folder
+                    anchors.centerIn: parent
+                    width: root.cellSize; height: root.cellSize
+                    radius: width / 2
+                    color: "transparent"
+                    border.width: 2
+                    border.color: theme.accent
+                    SequentialAnimation on scale {
+                        running: cell.hovered
+                        loops: Animation.Infinite
+                        NumberAnimation { from: 1; to: 1.55; duration: 900 }
+                        NumberAnimation { from: 1; to: 1; duration: 0 }
+                    }
+                    SequentialAnimation on opacity {
+                        running: cell.hovered
+                        loops: Animation.Infinite
+                        NumberAnimation { from: 0.7; to: 0; duration: 900 }
+                        NumberAnimation { from: 1; to: 1; duration: 0 }
+                    }
+                }
+            }
+        }
+    }
+}
