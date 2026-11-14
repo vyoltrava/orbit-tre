@@ -9,9 +9,12 @@ Item {
     readonly property real cx: win.cx
     readonly property real cy: win.cy
     readonly property int count: backend.items.length
-    readonly property real ringRadius: Math.max(150, Math.min(250, Math.min(win.width, win.height) / 2 - 110))
+    readonly property real ringRadius: Math.max(118, Math.min(185, Math.min(win.width, win.height) / 2 - 170))
     readonly property int cellSize: count > 10 ? 56 : 66
     property int launchingIndex: -1
+    property int hoveredIndex: -1
+    readonly property real hoveredAngle: hoveredIndex >= 0
+        ? -Math.PI / 2 + hoveredIndex * 2 * Math.PI / Math.max(count, 1) : 0
     // The action that runs after the ring has folded away (enter/back/launch).
     property var pendingCall: null
     // The click that opened the overlay must not count as a close-click.
@@ -59,6 +62,49 @@ Item {
         width: 1; height: 1 // only a container; cells position themselves absolutely
         x: root.cx
         y: root.cy
+
+        // A line from the center to the hovered cell, with a pulse running
+        // along it toward the icon.
+        Item {
+            id: hoverLine
+            visible: root.hoveredIndex >= 0
+            x: 0
+            y: 0
+            rotation: root.hoveredAngle * 180 / Math.PI
+
+            Rectangle {
+                x: 46
+                y: -1
+                width: Math.max(0, root.ringRadius - 46)
+                height: 2
+                opacity: 0.55
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: "transparent" }
+                    GradientStop { position: 0.35; color: theme.accent }
+                    GradientStop { position: 1; color: theme.accent }
+                }
+            }
+            Rectangle {
+                width: 9; height: 9; radius: 4.5
+                y: -4.5
+                color: "#ffffff"
+                SequentialAnimation on x {
+                    running: hoverLine.visible
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 46; to: root.ringRadius - 6; duration: 550; easing.type: Easing.InOutQuad }
+                    PauseAnimation { duration: 120 }
+                }
+                SequentialAnimation on opacity {
+                    running: hoverLine.visible
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 0; to: 1; duration: 275 }
+                    NumberAnimation { from: 1; to: 0.2; duration: 275 }
+                    NumberAnimation { from: 0.2; to: 0; duration: 120 }
+                    PauseAnimation { duration: 120 }
+                }
+            }
+        }
 
         // Center button: Settings at the root, Back inside a folder.
         AbstractButton {
@@ -147,6 +193,9 @@ Item {
                     }
                 }
 
+                onHoveredChanged: root.hoveredIndex = cell.hovered ? index
+                                  : (root.hoveredIndex === index ? -1 : root.hoveredIndex)
+
                 Timer {
                     id: launchTimer
                     interval: 120
@@ -171,7 +220,6 @@ Item {
                 contentItem: Item {
                     Image {
                         anchors.centerIn: parent
-                        anchors.verticalCenterOffset: -8
                         source: "image://icons/" + encodeURIComponent(modelData.icon || "application-x-executable")
                         sourceSize: Qt.size(32, 32)
                         width: 32; height: 32
