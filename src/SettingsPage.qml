@@ -248,6 +248,16 @@ Page {
                     RowLayout {
                         spacing: 6
                         Button {
+                            text: qsTr("Open folder")
+                            visible: page.selected >= 0 && backend.items[page.selected]
+                                     && backend.items[page.selected].folder
+                            onClicked: {
+                                backend.enter(page.selected)
+                                page.selected = -1
+                            }
+                            Material.roundedScale: Math.min(4, theme.radius)
+                        }
+                        Button {
                             text: qsTr("Icon from apps")
                             onClicked: appPicker.openFor("icon")
                             Material.roundedScale: Math.min(4, theme.radius)
@@ -305,7 +315,7 @@ Page {
         z: 99
         acceptedButtons: Qt.AllButtons
         onPressed: (mouse) => {
-            const mods = page.modsFrom(0)
+            const mods = page.modsFrom(mouse.modifiers)
             backend.setActivation(mods, page.buttonName(mouse.button))
             page.stopRecording()
         }

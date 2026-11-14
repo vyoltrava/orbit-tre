@@ -17,6 +17,7 @@
   "Cell": "Ячейка",
   "Name:": "Название:",
   "Command:": "Команда:",
+  "Open folder": "Открыть папку",
   "Icon from apps": "Иконка из приложений",
   "Remove": "Удалить",
   "A cell is a link to an app or a folder. Clicking a folder opens its own orbit — nest as deep as you like.": "Ячейка — ссылка на приложение или папка. Клик по папке откроет её орбиту — вкладывайте сколько угодно уровней.",

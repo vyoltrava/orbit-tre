@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 
-// The radial menu: cells evenly around the pointer (first on top), folders
-// fly the next ring out, the center is Settings on the root and Back inside.
+// The radial menu: cells evenly around the pointer (first on top); folders
+// fly the next ring out.
 Item {
     id: root
 
@@ -110,7 +110,7 @@ Item {
             }
         }
 
-        // Center button: Settings at the root, Back inside a folder.
+        // The center opens Settings at the root and goes back inside a folder.
         AbstractButton {
             id: center
             width: 88; height: 88
@@ -129,22 +129,13 @@ Item {
                 Behavior on color { ColorAnimation { duration: 120 } }
             }
             contentItem: Item {
-                Column {
+                Image {
                     anchors.centerIn: parent
-                    spacing: 2
-                    Image {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        source: "image://icons/" + (backend.breadcrumb.length > 1 ? "go-previous" : "preferences-system")
-                        sourceSize: Qt.size(30, 30)
-                        width: 30; height: 30
-                        fillMode: Image.PreserveAspectFit
-                    }
-                    Label {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: backend.breadcrumb.length > 1 ? qsTr("Back") : qsTr("Settings")
-                        font.pixelSize: 10
-                        color: "#ffffff"
-                    }
+                    source: backend.breadcrumb.length > 1
+                            ? "image://icons/go-previous" : "qrc:/orbit.svg"
+                    sourceSize: Qt.size(42, 42)
+                    width: 42; height: 42
+                    fillMode: Image.PreserveAspectFit
                 }
             }
         }

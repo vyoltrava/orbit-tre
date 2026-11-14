@@ -15,7 +15,7 @@ Settings.
   Press the same combo again to close it.
 - Click a cell to launch the app. Click a folder to fly its own ring out.
 - **Escape**, or a click outside the ring, closes it.
-- The center button is **Settings** at the root and **Back** inside a folder.
+- The orbit icon opens Settings at the root and goes back one level inside a folder.
 
 The orbit follows the Omarchy accent and language live.
 
@@ -39,12 +39,23 @@ launcher). There you can:
 
 ## Build and install
 
+Orbit targets Arch Linux with Hyprland (including Omarchy). On the PC where you
+want to install it, install `git` and `base-devel`, then clone this repository
+and run the installer:
+
 ```sh
-bin/install   # builds and installs the package (asks for the sudo password)
+git clone https://github.com/vyoltravva/orbit-tre.git
+cd orbit-tre
+./bin/install
 ```
 
-After installing, the bind is written on first launch. If Shift+LMB is
-already taken by something of yours, change the combo in the settings.
+`makepkg` resolves the Qt and Hyprland dependencies, builds the package, and
+asks for your password to install it. Launch **Orbit** from the app launcher.
+On first launch, Orbit writes its activation bind. If Shift+LMB is already
+taken, change the combo in Settings.
+
+To build without installing, run `./bin/build`. To run the test suite, run
+`./bin/test`.
 
 ## Keys
 
