@@ -9,12 +9,11 @@ Item {
     readonly property real cx: win.cx
     readonly property real cy: win.cy
     readonly property int count: backend.items.length
-    // The ring hugs the center button: its edge sits 8px from the button's
-    // edge (44 + 33 + 8). Cells shrink when there are many, so neighbors
-    // keep a small gap instead of overlapping.
-    readonly property real ringRadius: 85
+    // A comfortable gap from the center button; cells shrink when there are
+    // many, so neighbors keep a small gap instead of overlapping.
+    readonly property real ringRadius: 170
     readonly property int cellSize: count > 0
-        ? Math.max(40, Math.min(66, Math.floor(2 * Math.PI * ringRadius / count) - 8))
+        ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / count) - 8))
         : 66
     property int launchingIndex: -1
     property int hoveredIndex: -1
