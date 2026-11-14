@@ -1,5 +1,6 @@
 // orbit — a radial launcher: one ring of cells around the pointer, folders
 // open the next ring, the center opens settings.
+#include <QFile>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QLockFile>
@@ -11,6 +12,7 @@
 #include <QStandardPaths>
 #include <QUrl>
 
+#include <cerrno>
 #include <csignal>
 #include <unistd.h>
 
@@ -23,14 +25,20 @@
 // spawn a fresh one. Everything else (no argument, `settings`) opens it.
 static int toggle()
 {
-    const QString lockPath = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
-    QLockFile lock(lockPath + "/orbit.lock");
+    const QString lockPath = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation) + "/orbit.lock";
+    QLockFile lock(lockPath);
     qint64 pid = 0;
     QString host, user;
-    if (lock.getLockInfo(&pid, &host, &user))
-        ::kill(static_cast<pid_t>(pid), SIGTERM);
-    else
-        QProcess::startDetached(QCoreApplication::applicationFilePath(), {"open"});
+    if (lock.getLockInfo(&pid, &host, &user) && pid > 0) {
+        // A crashed or killed run leaves its lock behind; only a live pid
+        // means the overlay is really open.
+        if (::kill(static_cast<pid_t>(pid), 0) == 0 || errno == EPERM) {
+            ::kill(static_cast<pid_t>(pid), SIGTERM);
+            return 0;
+        }
+        QFile::remove(lockPath); // stale lock from a dead run
+    }
+    QProcess::startDetached(QCoreApplication::applicationFilePath(), {"open"});
     return 0;
 }
 

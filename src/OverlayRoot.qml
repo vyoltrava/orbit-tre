@@ -14,6 +14,16 @@ Item {
     property int launchingIndex: -1
     // The action that runs after the ring has folded away (enter/back/launch).
     property var pendingCall: null
+    // The click that opened the overlay must not count as a close-click.
+    property real openedAt: 0
+
+    Connections {
+        target: backend
+        function onPlacementChanged() {
+            if (backend.placed)
+                root.openedAt = Date.now()
+        }
+    }
 
     // Fade the whole overlay in once the compositor has placed the window.
     opacity: backend.placed && !win.closing ? 1 : 0
@@ -23,6 +33,8 @@ Item {
     MouseArea {
         anchors.fill: parent
         onClicked: (mouse) => {
+            if (Date.now() - root.openedAt < 300)
+                return
             const dx = mouse.x - root.cx, dy = mouse.y - root.cy
             if (Math.hypot(dx, dy) > root.ringRadius + 70)
                 win.closeOrbit()
