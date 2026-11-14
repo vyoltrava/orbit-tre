@@ -443,7 +443,7 @@ QString Backend::hyprlandBlock() const {
     const bool mouse = m_key.startsWith("mouse:");
     block += QString("o.bind(\"%1\", \"Orbit menu\", \"orbit toggle\", %2)\n")
                  .arg(activationCombo(), mouse ? "{ mouse = true }" : "{ }");
-    block += "o.window(\"orbit\", { float = true, noborder = true, nofocusring = true })\n";
+    block += "o.window(\"orbit\", { float = true, border_size = 0 })\n";
     block += kManagedEnd;
     return block;
 }
