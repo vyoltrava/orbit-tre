@@ -44,7 +44,7 @@ want to install it, install `git` and `base-devel`, then clone this repository
 and run the installer:
 
 ```sh
-git clone https://github.com/vyoltravva/orbit-tre.git
+git clone https://github.com/vyoltrava/orbit-tre.git
 cd orbit-tre
 ./bin/install
 ```
