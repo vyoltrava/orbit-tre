@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "vyoltrava.orbit",
+  "name": "Orbit",
+  "version": "1.0.0",
+  "author": "vyoltrava",
+  "description": "Lightweight radial application launcher for Omarchy",
+  "kinds": [
+    "menu",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "menu": "omarchy-plugin/Menu.qml",
+    "barWidget": "omarchy-plugin/BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Orbit",
+    "description": "Open the radial application launcher",
+    "category": "Applications",
+    "allowMultiple": false
+  }
+}
