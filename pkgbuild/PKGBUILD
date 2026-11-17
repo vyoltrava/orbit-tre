@@ -1,0 +1,37 @@
+# Maintainer: vyoltrava <diippercat@gmail.com>
+
+pkgname=orbit-dock
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Radial application launcher for Omarchy/Hyprland (standalone Rust/GTK4 app)"
+arch=('x86_64')
+url="https://github.com/vyoltrava/orbit-tre"
+license=('MIT')
+depends=('gtk4' 'cairo' 'gdk-pixbuf2' 'libevdev' 'systemd-libs')
+makedepends=('rust' 'cargo')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  cargo build --release --locked
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+
+  # Binary
+  install -Dm755 target/release/orbit-dock -t "$pkgdir/usr/bin/"
+
+  # Desktop entry
+  install -Dm644 pkgbuild/orbit-dock.desktop -t "$pkgdir/usr/share/applications/"
+
+  # Icon
+  install -Dm644 pkgbuild/orbit.svg -t "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
+
+  # Config directory example
+  install -d "$pkgdir/etc/xdg/orbit-dock/"
+
+  # Hyprland binding helper
+  install -Dm755 bin/setup-hyprland-bind -t "$pkgdir/usr/bin/"
+}

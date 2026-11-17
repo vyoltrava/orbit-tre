@@ -68,6 +68,7 @@ fn main() -> Result<()> {
     app.connect_activate(move |app| {
         log::info!("connect_activate: creating orbit window");
         let window = Rc::new(OrbitWindow::new(app, Rc::clone(&state)));
+        app.add_window(&window.window);
         *window_slot.borrow_mut() = Some(Rc::clone(&window));
 
         // Кнопка "Настройки" в орбите открывает окно конфига

@@ -40,7 +40,7 @@ const CSS_BASE: &str = r#"
 "#;
 
 pub struct OrbitWindow {
-    window: gtk4::ApplicationWindow,
+    pub window: gtk4::ApplicationWindow,
     fixed: gtk4::Fixed,
     state: Rc<RefCell<OrbitState>>,
     buttons: Rc<RefCell<Vec<gtk4::Button>>>,
@@ -53,7 +53,7 @@ impl OrbitWindow {
         window.set_decorated(false);
         window.set_default_size(400, 400);
         window.set_resizable(false);
-        window.set_opacity(0.0); // полностью прозрачное окно, фон рисуют кнопки
+        window.set_opacity(1.0);
 
         let fixed = gtk4::Fixed::new();
         window.set_child(Some(&fixed));

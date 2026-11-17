@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+echo "orbit-dock: building..."
+cargo build --release --locked
+
+echo ""
+echo "Build complete: target/release/orbit-dock"
+echo "Run: ./target/release/orbit-dock"

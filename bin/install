@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+echo "orbit-dock: installing..."
+makepkg -si --noconfirm
+
+echo "orbit-dock: setting up Hyprland binding (Shift + Left Click)..."
+setup-hyprland-bind
+
+echo ""
+echo "orbit-dock: installed. Open the radial menu with Shift + Left Click."
+echo "Settings are saved to ~/.config/orbit-dock/config.json"

@@ -1,0 +1,43 @@
+#!/bin/sh
+# Setup Shift+Left Click binding for orbit-dock in Hyprland.
+# Adds a managed block to ~/.config/hypr/bindings.lua and reloads hyprland.
+
+set -e
+
+BINDINGS_FILE="$HOME/.config/hypr/bindings.lua"
+BLOCK_BEGIN="-- >>> orbit-dock (managed by orbit-dock setup, do not edit)"
+BLOCK_END="-- <<< orbit-dock"
+
+# Ensure hypr config dir exists
+mkdir -p "$HOME/.config/hypr"
+
+# Create empty bindings file if missing
+if [ ! -f "$BINDINGS_FILE" ]; then
+  echo "# Hyprland keybindings" > "$BINDINGS_FILE"
+fi
+
+# Remove existing orbit-dock block if present
+if grep -q "$BLOCK_BEGIN" "$BINDINGS_FILE" 2>/dev/null; then
+  start=$(grep -n "$BLOCK_BEGIN" "$BINDINGS_FILE" | head -1 | cut -d: -f1)
+  end=$(grep -n "$BLOCK_END" "$BINDINGS_FILE" | head -1 | cut -d: -f1)
+  if [ -n "$start" ] && [ -n "$end" ] && [ "$start" -lt "$end" ]; then
+    sed -i "${start},${end}d" "$BINDINGS_FILE"
+  fi
+fi
+
+# Append the orbit-dock binding block
+cat >> "$BINDINGS_FILE" <<EOF
+
+$BLOCK_BEGIN
+# Orbit dock — open radial menu with Shift + Left Click
+bindm = \$mainMod, SHIFT, mouse:272, exec, orbit-dock
+$BLOCK_END
+EOF
+
+# Reload hyprland if running
+if command -v hyprctl >/dev/null 2>&1 && hyprctl clients >/dev/null 2>&1; then
+  hyprctl reload
+  echo "orbit-dock: binding installed and hyprland reloaded."
+else
+  echo "orbit-dock: binding added to $BINDINGS_FILE. Reload hyprland manually (hyprctl reload)."
+fi

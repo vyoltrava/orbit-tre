@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Orbit Dock
+GenericName=Radial Application Launcher
+Comment=Radial menu launcher for Hyprland (opens with Shift+Left Click)
+Exec=orbit-dock
+Icon=orbit-dock
+Terminal=false
+Type=Application
+Categories=Utility;Launcher;
+Keywords=launcher;radial;orbit;hyprland;omarchy;
