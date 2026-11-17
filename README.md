@@ -1,67 +1,87 @@
-# Orbit
+# Orbit — radial application launcher for Omarchy
 
-**A radial application launcher for Omarchy, built as a native Quickshell
-plugin.** Orbit opens around your pointer, launches apps from a compact ring,
-and lets folders open into their own nested orbits.
+**Orbit** — radial application launcher for Omarchy/Hyprland. A ring of cells around the pointer: each cell is either an application or a folder. Clicking a folder opens its own orbit, nesting is unlimited. Center of the ring — settings.
 
-![Orbit's radial menu](docs/orbit-menu.png)
+> Follows the Omarchy live theme accent color. Supports **English, Russian, Ukrainian**.
 
-## Features
+---
 
-- Pointer-centered radial menu that runs inside Omarchy's existing shell.
-- Add installed apps, create folders, and nest folders as needed.
-- Edit names, commands, and icons; reorder or remove items from the settings
-  window.
-- Customize menu colors, choose full, reduced, or disabled animation, and hide
-  all item names with one switch.
-- Automatically manages its Hyprland activation binding.
-- Reuses the existing menu at `~/.config/orbit/menu.json`.
+## Possibilities / Возможности / Можливості
 
-## Install on Omarchy
+| English | Русский | Українська |
+|---------|---------|------------|
+| Radial menu around the pointer | Радиальное меню вокруг курсора | Радіальне меню навколо курсора |
+| Nested folders (orbit-in-orbit) | Вложенные папки (орбита в орбите) | Вкладені теки (орбіта в орбіті) |
+| Live accent color from Omarchy theme | Акцентный цвет из темы Omarchy вживу | Колір акценту з теми Omarchy вживу |
+| Language follows Omarchy settings | Язык следует настройкам Omarchy | Мова відповідає налаштуванням Omarchy |
+| Custom accent color picker in settings | Селектор цвета акцента в настройках | Селектор кольору акценту в налаштуваннях |
+| Show / hide cell names under icons | Показать / скрыть названия под иконками | Показати / приховати назви під іконками |
+| Reorder, rename, remove cells | Переставить, переименовать, удалить ячейки | Переставити, перейменувати, видалити комірки |
 
-Add and enable the plugin, then place its launcher in the bar:
+---
 
-```sh
-omarchy plugin add https://github.com/vyoltrava/orbit-tre.git --enable
-omarchy bar put vyoltrava.orbit --section left
-```
+## How to use / Как пользоваться / Як користуватися
 
-By default, **Shift + Left Click** opens Orbit at the pointer. Click the center
-to open settings; inside a folder, the center button returns to the parent
-orbit. Press **Escape** or click outside the menu to close it.
+- **Shift + Left click** — opens orbit under the pointer (default binding). Press the same combination again — closes.
+- Click on a cell — launch application. Click on a folder — open its orbit.
+- **Escape** or click outside the ring — close.
+- Center of the ring (Orbit icon) — open settings at root, or go up a level inside a folder.
 
-## Configure
+---
 
-Open settings by clicking the center of the root orbit. The in-window editor
-can change the activation shortcut, search and add installed applications,
-create folders, choose icons, edit commands, and reorder or remove items.
-Appearance controls let you set the background, selected background, text,
-accent, and border colors; select an animation preset; and toggle item names.
-Changes are saved automatically.
+## Settings / Настройки / Налаштування
 
-Orbit stores its menu and preferences here:
+Opened from the center of the ring. Available:
 
-| File | Contents |
-| --- | --- |
-| `~/.config/orbit/menu.json` | Applications and folder layout |
-| `~/.config/orbit/config.json` | Activation shortcut and appearance settings |
-| `~/.config/hypr/bindings.lua` | Orbit's managed activation binding |
+- **Activation combo** — any key mouse combination (Shift+LMB, Super+O, F9…). Binding in Hyprland is rewritten and reloaded instantly.
+- **Menu editor** — add installed applications, folders, rename cells, take icon from any application, move ◀ ▶, delete. Saved immediately to `~/.config/orbit/menu.json`.
+- **Accent color** — enter HEX (e.g. `#8b5cf6`) and click Apply, or reset to Omarchy theme.
+- **Show cell names** — enable/disable names under icons in the ring.
 
-The plugin preserves the existing `menu.json`, so switching from the standalone
-launcher keeps your current applications and folders.
+---
 
-## Development
+## Files / Файли / Файли
 
-Validate the plugin and run its focused model tests:
+- `~/.config/orbit/menu.json` — menu tree.
+- `~/.config/orbit/config.json` — activation combination, accent color, show names.
+- `~/.config/hypr/bindings.lua` — managed block (`-- >>> orbit-menu`) with binding and window rules. The rest remains your own.
+
+---
+
+## Build and install / Сборка и установка / Збірка та інсталяція
+
+Requires Arch Linux + Hyprland (Omarchy recommended). Install `git` and `base-devel`, then:
 
 ```sh
-omarchy plugin validate .
-node tests/orbit_plugin_model.js
+git clone https://github.com/vyoltrava/orbit-tre.git
+cd orbit-tre
+./bin/install
 ```
 
-The repository also retains the standalone Qt application source. Its build
-and test helpers are `./bin/build` and `./bin/test`.
+`makepkg` resolves Qt and Hyprland dependencies, builds the package, and installs it. Launch **Orbit** from the app launcher. On first launch Orbit writes its activation bind. If Shift+LMB is taken, change the combo in Settings.
 
-## License
+To build without installing: `./bin/build`. To run tests: `./bin/test`.
 
-MIT — see [LICENSE](LICENSE).
+---
+
+## Languages / Языки / Мови
+
+Language is read from `~/.config/omarchy/language` (Omarchy Setup > Language). Catalogs:
+
+- `src/i18n/en.json` — English
+- `src/i18n/ru.json` — Русский
+- `src/i18n/uk.json` — Українська
+
+Add a new language by creating `src/i18n/<code>.json` with `"source text": "translation"` pairs.
+
+---
+
+## Screenshots / Скриншоты / Знімки екрана
+
+![Orbit menu](docs/orbit-menu.png) — Radial menu around the pointer / Радиальное меню вокруг курсора / Радіальне меню навколо курсора
+
+![Orbit settings](docs/orbit-settings.png) — Settings panel: accent color, cell names, menu editor / Панель настроек: цвет акцента, названия ячеек, редактор меню / Панель налаштувань: колір акценту, назви комірок, редактор меню
+
+---
+
+Licensed under the MIT license; the theme and translator follow Omacut and Monologue (MIT, David Heinemeier Hansson).
