@@ -17,6 +17,14 @@ Item {
   property var manifest: null
   property bool opened: false
   property bool settingsOpen: false
+  // Когда omarchy устанавливает opened = true (shell toggle), инициализируем и показываем оверлей.
+  onOpenedChanged: {
+    if (opened && !closing && !_opening) {
+      _opening = true
+      open()
+      _opening = false
+    }
+  }
   property int selectedIndex: 0
   property int hoveredIndex: -1
   property int launchingIndex: -1
@@ -38,6 +46,7 @@ Item {
   property real monitorY: 0
   property bool cursorPositionKnown: false
   property double openedAt: 0
+  property bool _opening: false
   readonly property string menuPath: Quickshell.env("HOME") + "/.config/orbit/menu.json"
   readonly property string activationPath: Quickshell.env("HOME") + "/.config/orbit/config.json"
   readonly property string bindingsPath: Quickshell.env("HOME") + "/.config/hypr/bindings.lua"
@@ -394,6 +403,7 @@ Item {
   }
 
   function open(payloadJson) {
+    if (opened && !closing) return
     closeAnimation.stop()
     foldAnimation.stop()
     closing = false
@@ -511,7 +521,11 @@ Item {
     watchChanges: true
     onLoaded: root.loadBindings(text())
     onFileChanged: reload()
-    onLoadFailed: console.warn("Orbit: cannot read " + root.bindingsPath)
+    onLoadFailed: {
+      console.warn("Orbit: cannot read " + root.bindingsPath + ", creating default bindings")
+      root.bindingsReady = true
+      root.ensureHyprlandIntegration()
+    }
   }
 
   QtObject {
