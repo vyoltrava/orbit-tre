@@ -787,6 +787,7 @@ Item {
               width: root.cellSize
               height: root.cellSize
               radius: width / 2
+              clip: true
               color: cell.hovered || cell.selected || root.launchingIndex === cell.index
                 ? root.selectedBackgroundColor : root.menuBackgroundColor
               border.width: (cell.hovered || cell.selected || root.launchingIndex === cell.index ? 2 : 1) * root.sizeScale
@@ -795,13 +796,26 @@ Item {
               Behavior on color { ColorAnimation { duration: root.motionDuration(120) } }
               Behavior on border.color { ColorAnimation { duration: root.motionDuration(120) } }
 
+              // Заливка акцентом под иконку (край круга)
+              Rectangle {
+                anchors.centerIn: parent
+                width: root.cellIconSize * 1.15
+                height: root.cellIconSize * 1.15
+                radius: width / 2
+                color: cell.hovered || cell.selected || root.launchingIndex === cell.index
+                  ? "transparent" : root.menuAccentColor
+                opacity: cell.hovered || cell.selected || root.launchingIndex === cell.index ? 0 : 0.85
+                Behavior on opacity { NumberAnimation { duration: root.motionDuration(120) } }
+              }
+
               Image {
                 anchors.centerIn: parent
                 width: root.cellIconSize
                 height: root.cellIconSize
-                sourceSize: Qt.size(width, height)
+                sourceSize: Qt.size(root.cellIconSize, root.cellIconSize)
                 source: root.iconSource(cell.modelData.icon)
                 fillMode: Image.PreserveAspectFit
+                clip: true
               }
             }
 
