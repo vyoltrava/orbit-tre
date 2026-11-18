@@ -2,12 +2,20 @@ import QtQuick
 import QtQuick.Controls
 
 // The radial menu: cells evenly around the pointer (first on top); folders
-// fly the next ring out.
+// fly the next ring out around their own cell, and climbing back up returns
+// to the stored spot.
 Item {
     id: root
 
-    readonly property real cx: win.cx
-    readonly property real cy: win.cy
+    // The ring's center in window coordinates: the pointer when the orbit
+    // opens, then the clicked folder's cell for a nested orbit. Assigning on
+    // navigation replaces the binding on purpose: a fresh overlay starts
+    // from the pointer again.
+    property real centerX: win.cx
+    property real centerY: win.cy
+    // Where each level's ring sat, so going up a level returns the ring to
+    // the same spot instead of collapsing to the pointer.
+    property var levelCenters: []
     readonly property int count: backend.items.length
     // A comfortable gap from the center button; cells shrink when there are
     // many, so neighbors keep a small gap instead of overlapping.
@@ -45,10 +53,32 @@ Item {
         onClicked: (mouse) => {
             if (Date.now() - root.openedAt < 300)
                 return
-            const dx = mouse.x - root.cx, dy = mouse.y - root.cy
+            const dx = mouse.x - root.centerX, dy = mouse.y - root.centerY
             if (Math.hypot(dx, dy) > root.ringRadius + 70)
                 win.closeOrbit()
         }
+    }
+
+    // A nested orbit opens around the folder cell that was clicked, clamped
+    // so the whole child ring stays on screen — a ring hanging off the edge
+    // would turn its far side into "outside" clicks that close the overlay.
+    function enterFolder(index) {
+        const depth = backend.breadcrumb.length - 1
+        levelCenters[depth] = { x: centerX, y: centerY }
+        const angle = -Math.PI / 2 + index * 2 * Math.PI / Math.max(count, 1)
+        const margin = ringRadius + 80
+        centerX = Math.min(Math.max(centerX + ringRadius * Math.cos(angle), margin), win.width - margin)
+        centerY = Math.min(Math.max(centerY + ringRadius * Math.sin(angle), margin), win.height - margin)
+        backend.enter(index)
+    }
+
+    function leaveFolder() {
+        const depth = backend.breadcrumb.length - 1
+        if (depth > 0 && levelCenters[depth - 1]) {
+            centerX = levelCenters[depth - 1].x
+            centerY = levelCenters[depth - 1].y
+        }
+        backend.selectBreadcrumb(backend.breadcrumb.length - 2)
     }
 
     function foldAwayThen(call) {
@@ -67,8 +97,8 @@ Item {
     Item {
         id: ringContent
         width: 1; height: 1 // only a container; cells position themselves absolutely
-        x: root.cx
-        y: root.cy
+        x: root.centerX
+        y: root.centerY
 
         // A line from the center to the hovered cell, with a pulse running
         // along it toward the icon.
@@ -121,7 +151,7 @@ Item {
             hoverEnabled: true
             HoverHandler { cursorShape: Qt.PointingHandCursor }
             onClicked: backend.breadcrumb.length > 1
-                        ? root.foldAwayThen(() => { backend.selectBreadcrumb(backend.breadcrumb.length - 2) })
+                        ? root.foldAwayThen(() => root.leaveFolder())
                         : win.openSettingsPage()
 
             background: Rectangle {
@@ -184,7 +214,7 @@ Item {
 
                 onClicked: {
                     if (modelData.folder) {
-                        root.foldAwayThen(() => backend.enter(index))
+                        root.foldAwayThen(() => root.enterFolder(index))
                     } else {
                         root.launchingIndex = index
                         launchTimer.start()

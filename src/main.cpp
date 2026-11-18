@@ -97,10 +97,16 @@ int main(int argc, char *argv[])
         backend.attachWindow(window, false);
         QTimer::singleShot(1500, window, [window, shotDirectory] {
             window->grabWindow().save(shotDirectory + "/orbit-menu.png");
-            window->setProperty("mode", "settings");
+            // Step into the first folder: the nested orbit captures the ring
+            // sitting around the folder's own cell.
+            QMetaObject::invokeMethod(window, "shotNestedOrbit");
             QTimer::singleShot(900, window, [window, shotDirectory] {
-                window->grabWindow().save(shotDirectory + "/orbit-settings.png");
-                QCoreApplication::quit();
+                window->grabWindow().save(shotDirectory + "/orbit-folder.png");
+                window->setProperty("mode", "settings");
+                QTimer::singleShot(900, window, [window, shotDirectory] {
+                    window->grabWindow().save(shotDirectory + "/orbit-settings.png");
+                    QCoreApplication::quit();
+                });
             });
         });
         return app.exec();

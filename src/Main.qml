@@ -29,6 +29,13 @@ ApplicationWindow {
         mode = "settings"
     }
 
+    // ORBIT_SHOT support: step into the first folder so the nested-orbit
+    // screenshot captures the ring around that folder's own cell.
+    function shotNestedOrbit() {
+        for (let i = 0; i < backend.items.length; i++)
+            if (backend.items[i].folder) { overlayRoot.enterFolder(i); return }
+    }
+
     function closeOrbit() {
         if (closing)
             return

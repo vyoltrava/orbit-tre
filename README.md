@@ -22,7 +22,7 @@
 ## How to use / Как пользоваться / Як користуватися
 
 - **Shift + Left click** — opens orbit under the pointer (default binding). Press the same combination again — closes.
-- Click on a cell — launch application. Click on a folder — open its orbit.
+- Click on a cell — launch application. Click on a folder — its orbit opens right around that folder's cell.
 - **Escape** or click outside the ring — close.
 - Center of the ring (Orbit icon) — open settings at root, or go up a level inside a folder.
 
@@ -78,7 +78,9 @@ Add a new language by creating `src/i18n/<code>.json` with `"source text": "tran
 
 ![Orbit menu](docs/orbit-menu.png) — Radial menu around the pointer / Радиальное меню вокруг курсора / Радіальне меню навколо курсора
 
-![Orbit settings](docs/orbit-settings.png) — Settings panel: accent color, cell names, menu editor / Панель настроек: цвет акцента, названия ячеек, редактор меню / Панель налаштувань: колір акценту, назви комірок, редактор меню
+![Orbit folder](docs/orbit-folder.png) — A folder opens its orbit right around its own cell / Папка открывает свою орбиту прямо вокруг своей клетки / Тека відкриває свою орбіту просто навколо своєї комірки
+
+![Orbit settings](docs/orbit-settings.png) — Settings panel: hotkey, cell names, menu editor / Панель настроек: комбинация, названия ячеек, редактор меню / Панель налаштувань: комбінація, назви комірок, редактор меню
 
 ---
 
