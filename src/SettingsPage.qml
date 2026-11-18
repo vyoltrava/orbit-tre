@@ -104,6 +104,20 @@ Page {
                 }
             }
 
+            // ── Cell names ────────────────────────────────────────────
+            RowLayout {
+                Layout.fillWidth: true
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Show cell names")
+                    color: Material.foreground
+                }
+                Switch {
+                    checked: backend.showNames
+                    onToggled: backend.setShowNames(checked)
+                }
+            }
+
             // ── Menu editor ───────────────────────────────────────────
             RowLayout {
                 Layout.fillWidth: true

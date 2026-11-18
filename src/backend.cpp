@@ -54,7 +54,7 @@ Backend::Backend(const QString &configDirectory, const QString &bindingsFile, co
         ensureDefaultMenu();
         save();
     }
-    loadHotkey();
+    loadConfig();
     // Write the default Shift+LMB bind and the window rules on first run.
     ensureHyprlandIntegration();
 }
@@ -414,9 +414,9 @@ void Backend::moveItem(int index, int delta) {
     emit itemsChanged();
 }
 
-// ------------------------------------------------------------------ hotkey
+// ------------------------------------------------------------------ config
 
-void Backend::loadHotkey() {
+void Backend::loadConfig() {
     QFile file(m_configDirectory + "/config.json");
     if (file.open(QIODevice::ReadOnly)) {
         const QJsonObject object = QJsonDocument::fromJson(file.readAll()).object();
@@ -424,11 +424,31 @@ void Backend::loadHotkey() {
         for (const QJsonValue &value : object.value("mods").toArray())
             m_mods.append(value.toString());
         m_key = object.value("key").toString();
+        // "showNames" at the top level; older builds kept it under "settings".
+        if (object.contains("showNames"))
+            m_showNames = object.value("showNames").toBool();
+        else {
+            const QJsonObject legacy = object.value("settings").toObject();
+            if (legacy.contains("showNames"))
+                m_showNames = legacy.value("showNames").toBool();
+        }
     }
     if (m_mods.isEmpty() && m_key.isEmpty()) {
         m_mods = {"SHIFT"};
         m_key = "mouse:272";
     }
+}
+
+void Backend::saveConfig() {
+    QFile file(m_configDirectory + "/config.json");
+    if (!file.open(QIODevice::WriteOnly))
+        return;
+    QJsonArray modsArray;
+    for (const QString &mod : m_mods)
+        modsArray.append(mod);
+    file.write(QJsonDocument(QJsonObject{{"mods", modsArray},
+                                         {"key", m_key},
+                                         {"showNames", m_showNames}}).toJson());
 }
 
 QString Backend::activationCombo() const {
@@ -462,7 +482,7 @@ void Backend::ensureHyprlandIntegration() {
         QRegularExpression::DotMatchesEverythingOption);
     const QString cleaned = contents.replace(blockRemoval, "");
     const QString updated = cleaned.trimmed() + "\n\n" + hyprlandBlock() + "\n";
-    if (updated == contents)
+    if (updated.trimmed() == contents.trimmed())
         return;
     if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         file.write(updated.toUtf8());
@@ -475,15 +495,17 @@ void Backend::setActivation(const QStringList &mods, const QString &key) {
         return;
     m_mods = mods;
     m_key = key;
-    QFile file(m_configDirectory + "/config.json");
-    if (file.open(QIODevice::WriteOnly)) {
-        QJsonArray modsArray;
-        for (const QString &mod : mods)
-            modsArray.append(mod);
-        file.write(QJsonDocument(QJsonObject{{"mods", modsArray}, {"key", key}}).toJson());
-    }
+    saveConfig();
     emit hotkeyChanged();
     ensureHyprlandIntegration();
+}
+
+void Backend::setShowNames(bool show) {
+    if (show == m_showNames)
+        return;
+    m_showNames = show;
+    saveConfig();
+    emit hotkeyChanged();
 }
 
 void Backend::reloadHyprland() {

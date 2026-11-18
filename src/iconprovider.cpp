@@ -1,10 +1,36 @@
 #include "iconprovider.h"
 
+#include <QFileInfo>
 #include <QIcon>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
 #include <QUrl>
+
+#include <algorithm>
+
+// The session may name an icon theme that is not installed — gsettings often
+// carries a leftover from another desktop — and Qt then answers null for every
+// lookup, even the generic fallback, so the ring fills with blank cells. When
+// the selected theme ships no index.theme anywhere on the search path, point
+// Qt at one that does.
+void IconProvider::ensureUsableTheme() {
+    const auto paths = QIcon::themeSearchPaths();
+    const auto installed = [&paths](const QString &theme) {
+        return std::any_of(paths.cbegin(), paths.cend(), [&theme](const QString &dir) {
+            return QFileInfo::exists(dir + '/' + theme + "/index.theme");
+        });
+    };
+    if (installed(QIcon::themeName()))
+        return;
+    for (const QString &theme : {QStringLiteral("hicolor"), QStringLiteral("Adwaita"),
+                                 QStringLiteral("breeze-dark"), QStringLiteral("breeze")}) {
+        if (installed(theme)) {
+            QIcon::setThemeName(theme);
+            return;
+        }
+    }
+}
 
 QPixmap IconProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
 {

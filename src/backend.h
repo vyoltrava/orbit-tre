@@ -28,6 +28,9 @@ class Backend : public QObject {
     // Activation hotkey, e.g. "SHIFT + mouse:272".
     Q_PROPERTY(QString activationCombo READ activationCombo NOTIFY hotkeyChanged)
 
+    // Whether the ring draws cell names under the icons.
+    Q_PROPERTY(bool showNames READ showNames WRITE setShowNames NOTIFY hotkeyChanged)
+
 public:
     // Config/menu directory, Hyprland bindings file, hyprctl and the
     // .desktop search paths are injectable, so tests run off real user files.
@@ -45,6 +48,7 @@ public:
     QString currentName() const;
     QStringList breadcrumb() const;
     QString activationCombo() const;
+    bool showNames() const { return m_showNames; }
 
     // Called by main.cpp once the window exists: sizes it to the monitor the
     // pointer is on, shows it, and moves it there through Hyprland (Wayland
@@ -71,6 +75,7 @@ public:
     // Applies a new activation hotkey: rewrites the managed block in the
     // Hyprland bindings file and reloads the compositor config.
     Q_INVOKABLE void setActivation(const QStringList &mods, const QString &key);
+    Q_INVOKABLE void setShowNames(bool show);
 
     // The managed Lua block, also exercised by tests.
     QString hyprlandBlock() const;
@@ -93,9 +98,10 @@ private:
     void load();
     void ensureDefaultMenu();
     void scanApplications();
-    void loadHotkey();
+    void loadConfig();
     void ensureHyprlandIntegration();
     void reloadHyprland();
+    void saveConfig();
 
     QString m_configDirectory;
     QString m_bindingsFile;
@@ -105,6 +111,7 @@ private:
     QVariantList m_apps;     // installed applications
     QStringList m_mods;      // hotkey modifiers, e.g. ["SHIFT"]
     QString m_key;           // hotkey key, e.g. "mouse:272"
+    bool m_showNames = true; // cell labels under the icons
     QString m_currentPath;   // "" = root, "2.0" = third item's first child
 
     int m_monitorWidth = 1280;

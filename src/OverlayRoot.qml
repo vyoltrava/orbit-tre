@@ -240,6 +240,7 @@ Item {
                         }
                     }
                     Label {
+                        visible: backend.showNames
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: root.cellSize + 10
                         width: root.cellSize + 16

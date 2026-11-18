@@ -110,6 +110,32 @@ private slots:
         QVERIFY(backend.searchApplications("foo").size() == 1);
     }
 
+    void keepsShowNamesSetting()
+    {
+        QTemporaryDir dir;
+        Backend backend(dir.path(), dir.path() + "/bindings.lua", {}, {});
+        QVERIFY(backend.showNames()); // default is on
+
+        backend.setShowNames(false);
+        QCOMPARE(backend.showNames(), false);
+
+        // The hotkey survives the names toggle, and both load back together.
+        backend.setActivation({"SUPER"}, "O");
+        Backend reloaded(dir.path(), dir.path() + "/bindings.lua", {}, {});
+        QCOMPARE(reloaded.showNames(), false);
+        QCOMPARE(reloaded.activationCombo(), QString("SUPER + O"));
+    }
+
+    void readsLegacyShowNames()
+    {
+        QTemporaryDir dir;
+        write(dir.path() + "/config.json",
+              R"({"settings": {"showNames": false}, "key": "F9", "mods": []})");
+        Backend backend(dir.path(), dir.path() + "/bindings.lua", {}, {});
+        QCOMPARE(backend.showNames(), false);
+        QCOMPARE(backend.activationCombo(), QString("F9"));
+    }
+
     void writesTheHotkeyBlock()
     {
         QTemporaryDir dir;

@@ -9,7 +9,12 @@
 
 class IconProvider : public QQuickImageProvider {
 public:
-    explicit IconProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
+    explicit IconProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) { ensureUsableTheme(); }
 
     QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override;
+
+private:
+    // Pins Qt to a theme that actually exists, so lookups never all come back
+    // null on a session whose icon theme is missing.
+    static void ensureUsableTheme();
 };
