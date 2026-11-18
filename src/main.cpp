@@ -60,8 +60,10 @@ int main(int argc, char *argv[])
     QQuickStyle::setStyle("Material");
 
     // Screenshot mode (ORBIT_SHOT) renders offscreen with the software scene
-    // graph, so grabWindow() works without a GPU.
-    if (!qEnvironmentVariableIsEmpty("ORBIT_SHOT"))
+    // graph, so grabWindow() works without a GPU. ORBIT_SHOT_GPU=1 keeps the
+    // hardware renderer, which is the only one that can draw the MultiEffect
+    // blur of the ghost ring (the software one drops it).
+    if (!qEnvironmentVariableIsEmpty("ORBIT_SHOT") && qEnvironmentVariableIsEmpty("ORBIT_SHOT_GPU"))
         QQuickWindow::setGraphicsApi(QSGRendererInterface::GraphicsApi::Software);
 
     Translator translator;

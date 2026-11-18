@@ -78,7 +78,7 @@ Add a new language by creating `src/i18n/<code>.json` with `"source text": "tran
 
 ![Orbit menu](docs/orbit-menu.png) — Radial menu around the pointer / Радиальное меню вокруг курсора / Радіальне меню навколо курсора
 
-![Orbit folder](docs/orbit-folder.png) — A folder opens its orbit right around its own cell / Папка открывает свою орбиту прямо вокруг своей клетки / Тека відкриває свою орбіту просто навколо своєї комірки
+![Orbit folder](docs/orbit-folder.png) — A folder opens its orbit around its own cell while the previous level stays on screen, blurred / Папка открывает свою орбиту вокруг своей клетки, а прошлая ступень остаётся на экране под блюром / Тека відкриває свою орбіту навколо своєї комірки, а попередній рівень лишається на екрані під блюром
 
 ![Orbit settings](docs/orbit-settings.png) — Settings panel: hotkey, cell names, menu editor / Панель настроек: комбинация, названия ячеек, редактор меню / Панель налаштувань: комбінація, назви комірок, редактор меню
 

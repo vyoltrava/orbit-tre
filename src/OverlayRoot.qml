@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 
 // The radial menu: cells evenly around the pointer (first on top); folders
-// fly the next ring out around their own cell, and climbing back up returns
-// to the stored spot.
+// fly the next ring out around their own cell while the previous level stays
+// on screen behind, frozen and blurred, and climbing back up returns to the
+// stored spot.
 Item {
     id: root
 
@@ -28,6 +30,16 @@ Item {
     readonly property int cellIconSize: cellSize
     property int launchingIndex: -1
     property int hoveredIndex: -1
+    // The previous level, left on screen behind the active ring: a frozen
+    // copy of the ring as it was the moment the folder was clicked, blurred.
+    property var ghostItems: []
+    property bool ghostNested: false
+    property real ghostX: 0
+    property real ghostY: 0
+    property bool ghostShown: false
+    readonly property int ghostCellSize: ghostItems.length > 0
+        ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / ghostItems.length) - 8))
+        : 66
     readonly property real hoveredAngle: hoveredIndex >= 0
         ? -Math.PI / 2 + hoveredIndex * 2 * Math.PI / Math.max(count, 1) : 0
     // The action that runs after the ring has folded away (enter/back/launch).
@@ -62,9 +74,16 @@ Item {
     // A nested orbit opens around the folder cell that was clicked, clamped
     // so the whole child ring stays on screen — a ring hanging off the edge
     // would turn its far side into "outside" clicks that close the overlay.
+    // The ring being left stays exactly where it is, as a blurred copy under
+    // the active ring; the click that opened the folder replaces it.
     function enterFolder(index) {
         const depth = backend.breadcrumb.length - 1
         levelCenters[depth] = { x: centerX, y: centerY }
+        ghostItems = backend.items
+        ghostNested = depth > 0
+        ghostX = centerX
+        ghostY = centerY
+        ghostShown = true
         const angle = -Math.PI / 2 + index * 2 * Math.PI / Math.max(count, 1)
         const margin = ringRadius + 80
         centerX = Math.min(Math.max(centerX + ringRadius * Math.cos(angle), margin), win.width - margin)
@@ -74,6 +93,7 @@ Item {
 
     function leaveFolder() {
         const depth = backend.breadcrumb.length - 1
+        ghostShown = false // the returning ring pops in under the fading ghost
         if (depth > 0 && levelCenters[depth - 1]) {
             centerX = levelCenters[depth - 1].x
             centerY = levelCenters[depth - 1].y
@@ -92,6 +112,123 @@ Item {
         NumberAnimation { target: ringContent; property: "opacity"; to: 0; duration: 90 }
         ScriptAction { script: { root.pendingCall(); root.pendingCall = null } }
         onFinished: { ringContent.scale = 1; ringContent.opacity = 1 }
+    }
+
+    // The level just left, parked exactly where it was: a frozen copy of the
+    // ring (cells and center), blurred and dimmed under the active ring. It
+    // is drawn from a captured copy of the items, so it never follows the
+    // live model, and it fades away as the active ring returns to it.
+    Item {
+        id: ghost
+        x: root.ghostX - root.ringRadius - 110
+        y: root.ghostY - root.ringRadius - 110
+        width: (root.ringRadius + 110) * 2
+        height: (root.ringRadius + 110) * 2
+        visible: opacity > 0.01
+        opacity: root.ghostShown ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+        // Blurred and slightly dimmed: clearly a layer behind, never a
+        // second active menu. The blur comes from a layer, because a
+        // MultiEffect that samples a hidden item gets an empty texture.
+        Item {
+            id: ghostRing
+            anchors.fill: parent
+            opacity: 0.45
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blurMax: 48
+                blur: 1.0
+                saturation: -0.35
+                brightness: -0.3
+            }
+
+            // Ring origin: the ghost cells are laid out around this point.
+            Item {
+                x: ghostRing.width / 2
+                y: ghostRing.height / 2
+                width: 1
+                height: 1
+
+                Rectangle {
+                    width: 88; height: 88
+                    x: -44; y: -44
+                    radius: 44
+                    color: Qt.rgba(0, 0, 0, 0.35)
+                    border.width: 2
+                    border.color: theme.accent
+                    Image {
+                        anchors.centerIn: parent
+                        source: root.ghostNested ? "image://icons/go-previous" : "qrc:/orbit.svg"
+                        sourceSize: Qt.size(42, 42)
+                        width: 42; height: 42
+                        fillMode: Image.PreserveAspectFit
+                    }
+                }
+
+                Repeater {
+                    model: root.ghostItems
+
+                    delegate: Item {
+                        required property var modelData
+                        required property int index
+
+                        readonly property real angle: -Math.PI / 2 + index * 2 * Math.PI / Math.max(root.ghostItems.length, 1)
+
+                        x: root.ringRadius * Math.cos(angle) - width / 2
+                        y: root.ringRadius * Math.sin(angle) - height / 2
+                        width: root.ghostCellSize + 8
+                        height: root.ghostCellSize + 8
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: root.ghostCellSize
+                            height: root.ghostCellSize
+                            radius: width / 2
+                            color: Qt.rgba(0.05, 0.05, 0.07, 0.72)
+                            border.width: 1
+                            border.color: Qt.rgba(1, 1, 1, 0.18)
+                        }
+                        Image {
+                            anchors.centerIn: parent
+                            width: root.ghostCellSize
+                            height: root.ghostCellSize
+                            sourceSize: Qt.size(root.ghostCellSize, root.ghostCellSize)
+                            source: "image://icons/circle:" + encodeURIComponent(modelData.icon || "application-x-executable")
+                            fillMode: Image.PreserveAspectFit
+                        }
+                        Rectangle {
+                            visible: modelData.folder && modelData.count > 0
+                            width: 20; height: 20; radius: 10
+                            x: root.ghostCellSize - 18
+                            y: root.ghostCellSize - 26
+                            color: theme.accent
+                            Label {
+                                anchors.centerIn: parent
+                                text: modelData.count > 9 ? "9+" : modelData.count
+                                font.pixelSize: 10
+                                font.bold: true
+                                color: theme.accentForeground
+                            }
+                        }
+                        Label {
+                            visible: backend.showNames
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            y: root.ghostCellSize + 10
+                            width: root.ghostCellSize + 16
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                            text: modelData.name
+                            font.pixelSize: 11
+                            color: "#ffffff"
+                            style: Text.Outline
+                            styleColor: Qt.rgba(0, 0, 0, 0.55)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Item {
@@ -214,7 +351,9 @@ Item {
 
                 onClicked: {
                     if (modelData.folder) {
-                        root.foldAwayThen(() => root.enterFolder(index))
+                        // No fold: the ring being left stays on screen as the
+                        // blurred ghost, the child orbit pops around the cell.
+                        root.enterFolder(index)
                     } else {
                         root.launchingIndex = index
                         launchTimer.start()
