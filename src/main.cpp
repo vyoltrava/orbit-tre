@@ -10,6 +10,7 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QUrl>
 
 #include <cerrno>
@@ -58,6 +59,11 @@ int main(int argc, char *argv[])
 
     QQuickStyle::setStyle("Material");
 
+    // Screenshot mode (ORBIT_SHOT) renders offscreen with the software scene
+    // graph, so grabWindow() works without a GPU.
+    if (!qEnvironmentVariableIsEmpty("ORBIT_SHOT"))
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::GraphicsApi::Software);
+
     Translator translator;
     app.installTranslator(&translator);
 
@@ -78,11 +84,28 @@ int main(int argc, char *argv[])
     // The engine takes ownership of the provider and deletes it itself.
     engine.addImageProvider("icons", new IconProvider);
     engine.load(QUrl("qrc:/Main.qml"));
-    qWarning() << "DEBUG rootObjects:" << engine.rootObjects().size();
     if (engine.rootObjects().isEmpty())
         return 1;
 
     auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst());
+
+    // ORBIT_SHOT=<directory> — offscreen screenshot mode for the README:
+    // renders the orbit menu and the settings page to PNG files, then exits.
+    // Run it with QT_QPA_PLATFORM=offscreen set.
+    const QString shotDirectory = qEnvironmentVariable("ORBIT_SHOT");
+    if (!shotDirectory.isEmpty()) {
+        backend.attachWindow(window, false);
+        QTimer::singleShot(1500, window, [window, shotDirectory] {
+            window->grabWindow().save(shotDirectory + "/orbit-menu.png");
+            window->setProperty("mode", "settings");
+            QTimer::singleShot(900, window, [window, shotDirectory] {
+                window->grabWindow().save(shotDirectory + "/orbit-settings.png");
+                QCoreApplication::quit();
+            });
+        });
+        return app.exec();
+    }
+
     backend.attachWindow(window, arguments.contains("settings"));
 
     return app.exec();

@@ -14,7 +14,6 @@
 | Nested folders (orbit-in-orbit) | Вложенные папки (орбита в орбите) | Вкладені теки (орбіта в орбіті) |
 | Live accent color from Omarchy theme | Акцентный цвет из темы Omarchy вживу | Колір акценту з теми Omarchy вживу |
 | Language follows Omarchy settings | Язык следует настройкам Omarchy | Мова відповідає налаштуванням Omarchy |
-| Custom accent color picker in settings | Селектор цвета акцента в настройках | Селектор кольору акценту в налаштуваннях |
 | Show / hide cell names under icons | Показать / скрыть названия под иконками | Показати / приховати назви під іконками |
 | Reorder, rename, remove cells | Переставить, переименовать, удалить ячейки | Переставити, перейменувати, видалити комірки |
 
@@ -35,7 +34,6 @@ Opened from the center of the ring. Available:
 
 - **Activation combo** — any key mouse combination (Shift+LMB, Super+O, F9…). Binding in Hyprland is rewritten and reloaded instantly.
 - **Menu editor** — add installed applications, folders, rename cells, take icon from any application, move ◀ ▶, delete. Saved immediately to `~/.config/orbit/menu.json`.
-- **Accent color** — enter HEX (e.g. `#8b5cf6`) and click Apply, or reset to Omarchy theme.
 - **Show cell names** — enable/disable names under icons in the ring.
 
 ---
@@ -43,7 +41,7 @@ Opened from the center of the ring. Available:
 ## Files / Файли / Файли
 
 - `~/.config/orbit/menu.json` — menu tree.
-- `~/.config/orbit/config.json` — activation combination, accent color, show names.
+- `~/.config/orbit/config.json` — activation combination.
 - `~/.config/hypr/bindings.lua` — managed block (`-- >>> orbit-menu`) with binding and window rules. The rest remains your own.
 
 ---

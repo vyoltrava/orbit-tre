@@ -49,11 +49,11 @@ Backend::Backend(const QString &configDirectory, const QString &bindingsFile, co
 
     QDir().mkpath(m_configDirectory);
     load();
+    scanApplications();
     if (m_menu.value("items").toArray().isEmpty()) {
         ensureDefaultMenu();
         save();
     }
-    scanApplications();
     loadHotkey();
     // Write the default Shift+LMB bind and the window rules on first run.
     ensureHyprlandIntegration();
