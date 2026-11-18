@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
     // The engine takes ownership of the provider and deletes it itself.
     engine.addImageProvider("icons", new IconProvider);
     engine.load(QUrl("qrc:/Main.qml"));
+    qWarning() << "DEBUG rootObjects:" << engine.rootObjects().size();
     if (engine.rootObjects().isEmpty())
         return 1;
 

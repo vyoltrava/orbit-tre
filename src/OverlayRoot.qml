@@ -15,6 +15,12 @@ Item {
     readonly property int cellSize: count > 0
         ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / count) - 8))
         : 66
+    // Иконка почти на весь круг ячейки: провайдер обрезает её по кругу,
+    // поэтому квадратные иконки не выпирают за край.
+    readonly property int cellIconSize: cellSize - 6
+    // Иконка внутри ячейки: чуть меньше круга, чтобы квадратные иконки
+    // обрезались по кругу и не выпирали за край.
+    readonly property int cellIconSize: Math.min(cellSize - 10, 40)
     property int launchingIndex: -1
     property int hoveredIndex: -1
     readonly property real hoveredAngle: hoveredIndex >= 0
@@ -205,6 +211,7 @@ Item {
                     width: root.cellSize
                     height: root.cellSize
                     radius: width / 2
+                    clip: true
                     color: cell.glowing ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(0.05, 0.05, 0.07, 0.72)
                     border.width: cell.glowing ? 2 : 1
                     border.color: cell.glowing ? theme.accent : Qt.rgba(1, 1, 1, 0.18)
@@ -215,9 +222,10 @@ Item {
                 contentItem: Item {
                     Image {
                         anchors.centerIn: parent
-                        source: "image://icons/" + encodeURIComponent(modelData.icon || "application-x-executable")
-                        sourceSize: Qt.size(32, 32)
-                        width: 32; height: 32
+                        width: root.cellIconSize
+                        height: root.cellIconSize
+                        sourceSize: Qt.size(root.cellIconSize, root.cellIconSize)
+                        source: "image://icons/circle:" + encodeURIComponent(modelData.icon || "application-x-executable")
                         fillMode: Image.PreserveAspectFit
                     }
                     // Folder cells get a small count badge on the edge.
