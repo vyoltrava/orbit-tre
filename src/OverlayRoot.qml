@@ -21,7 +21,7 @@ Item {
     readonly property int count: backend.items.length
     // A comfortable gap from the center button; cells shrink when there are
     // many, so neighbors keep a small gap instead of overlapping.
-    readonly property real ringRadius: 170
+    readonly property real ringRadius: 85
     readonly property int cellSize: count > 0
         ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / count) - 8))
         : 66
@@ -66,7 +66,7 @@ Item {
             if (Date.now() - root.openedAt < 300)
                 return
             const dx = mouse.x - root.centerX, dy = mouse.y - root.centerY
-            if (Math.hypot(dx, dy) > root.ringRadius + 70)
+            if (Math.hypot(dx, dy) > root.ringRadius + 35)
                 win.closeOrbit()
         }
     }
@@ -85,7 +85,7 @@ Item {
         ghostY = centerY
         ghostShown = true
         const angle = -Math.PI / 2 + index * 2 * Math.PI / Math.max(count, 1)
-        const margin = ringRadius + 80
+        const margin = ringRadius + 40
         centerX = Math.min(Math.max(centerX + ringRadius * Math.cos(angle), margin), win.width - margin)
         centerY = Math.min(Math.max(centerY + ringRadius * Math.sin(angle), margin), win.height - margin)
         backend.enter(index)
@@ -120,8 +120,8 @@ Item {
     // live model, and it fades away as the active ring returns to it.
     Item {
         id: ghost
-        x: root.ghostX - root.ringRadius - 110
-        y: root.ghostY - root.ringRadius - 110
+        x: root.ghostX - root.ringRadius - 55
+        y: root.ghostY - root.ringRadius - 55
         width: (root.ringRadius + 110) * 2
         height: (root.ringRadius + 110) * 2
         visible: opacity > 0.01
@@ -152,11 +152,11 @@ Item {
                 height: 1
 
                 Rectangle {
-                    width: 88; height: 88
+                    width: 44; height: 44
                     x: -44; y: -44
-                    radius: 44
+                    radius: 22
                     color: Qt.rgba(0, 0, 0, 0.35)
-                    border.width: 2
+                    border.width: 1
                     border.color: theme.accent
                     Image {
                         anchors.centerIn: parent
@@ -200,14 +200,14 @@ Item {
                         }
                         Rectangle {
                             visible: modelData.folder && modelData.count > 0
-                            width: 20; height: 20; radius: 10
+                            width: 10; height: 10; radius: 5
                             x: root.ghostCellSize - 18
-                            y: root.ghostCellSize - 26
+                            y: root.ghostCellSize - 13
                             color: theme.accent
                             Label {
                                 anchors.centerIn: parent
                                 text: modelData.count > 9 ? "9+" : modelData.count
-                                font.pixelSize: 10
+                                font.pixelSize: 5
                                 font.bold: true
                                 color: theme.accentForeground
                             }
@@ -249,7 +249,7 @@ Item {
             Rectangle {
                 x: 46
                 y: -1
-                width: Math.max(0, root.ringRadius - 46)
+                width: Math.max(0, root.ringRadius - 23)
                 height: 2
                 opacity: 0.55
                 gradient: Gradient {
@@ -266,7 +266,7 @@ Item {
                 SequentialAnimation on x {
                     running: hoverLine.visible
                     loops: Animation.Infinite
-                    NumberAnimation { from: 46; to: root.ringRadius - 6; duration: 550; easing.type: Easing.InOutQuad }
+                    NumberAnimation { from: 23; to: root.ringRadius - 3; duration: 550; easing.type: Easing.InOutQuad }
                     PauseAnimation { duration: 120 }
                 }
                 SequentialAnimation on opacity {
@@ -283,7 +283,7 @@ Item {
         // The center opens Settings at the root and goes back inside a folder.
         AbstractButton {
             id: center
-            width: 88; height: 88
+            width: 44; height: 44
             x: -44; y: -44
             hoverEnabled: true
             HoverHandler { cursorShape: Qt.PointingHandCursor }
@@ -294,7 +294,7 @@ Item {
             background: Rectangle {
                 radius: width / 2
                 color: center.hovered ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.35)
-                border.width: 2
+                border.width: 1
                 border.color: theme.accent
                 Behavior on color { ColorAnimation { duration: 120 } }
             }
@@ -396,14 +396,14 @@ Item {
                     // Folder cells get a small count badge on the edge.
                     Rectangle {
                         visible: modelData.folder && modelData.count > 0
-                        width: 20; height: 20; radius: 10
-                        x: root.cellSize - 18
-                        y: root.cellSize - 26
+                        width: 10; height: 10; radius: 5
+                        x: root.cellSize - 9
+                        y: root.cellSize - 13
                         color: theme.accent
                         Label {
                             anchors.centerIn: parent
                             text: modelData.count > 9 ? "9+" : modelData.count
-                            font.pixelSize: 10
+                            font.pixelSize: 5
                             font.bold: true
                             color: theme.accentForeground
                         }
@@ -412,7 +412,7 @@ Item {
                         visible: backend.showNames
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: root.cellSize + 10
-                        width: root.cellSize + 16
+                        width: root.cellSize + 8
                         horizontalAlignment: Text.AlignHCenter
                         elide: Text.ElideRight
                         text: modelData.name
@@ -430,7 +430,7 @@ Item {
                     width: root.cellSize; height: root.cellSize
                     radius: width / 2
                     color: "transparent"
-                    border.width: 2
+                    border.width: 1
                     border.color: theme.accent
                     SequentialAnimation on scale {
                         running: cell.hovered
