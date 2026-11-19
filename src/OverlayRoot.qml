@@ -2,36 +2,20 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 
-// The radial menu: cells evenly around the pointer (first on top); folders
-// fly the next ring out around their own cell while the previous level stays
-// on screen behind, frozen and blurred, and climbing back up returns to the
-// stored spot.
 Item {
     id: root
 
-    // The ring's center in window coordinates: the pointer when the orbit
-    // opens, then the clicked folder's cell for a nested orbit. Assigning on
-    // navigation replaces the binding on purpose: a fresh overlay starts
-    // from the pointer again.
     property real centerX: win.cx
     property real centerY: win.cy
-    // Where each level's ring sat, so going up a level returns the ring to
-    // the same spot instead of collapsing to the pointer.
     property var levelCenters: []
     readonly property int count: backend.items.length
-    // A comfortable gap from the center button; cells shrink when there are
-    // many, so neighbors keep a small gap instead of overlapping.
-    readonly property real ringRadius: 85
+    readonly property real ringRadius: 150
     readonly property int cellSize: count > 0
         ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / count) - 8))
         : 66
-    // Иконка ровно по кругу ячейки: провайдер обрезает её по окружности,
-    // поэтому квадратные иконки не выпирают за край, а края честно режутся.
     readonly property int cellIconSize: cellSize
     property int launchingIndex: -1
     property int hoveredIndex: -1
-    // The previous level, left on screen behind the active ring: a frozen
-    // copy of the ring as it was the moment the folder was clicked, blurred.
     property var ghostItems: []
     property bool ghostNested: false
     property real ghostX: 0
@@ -42,9 +26,7 @@ Item {
         : 66
     readonly property real hoveredAngle: hoveredIndex >= 0
         ? -Math.PI / 2 + hoveredIndex * 2 * Math.PI / Math.max(count, 1) : 0
-    // The action that runs after the ring has folded away (enter/back/launch).
     property var pendingCall: null
-    // The click that opened the overlay must not count as a close-click.
     property real openedAt: 0
 
     Connections {
@@ -55,27 +37,20 @@ Item {
         }
     }
 
-    // Fade the whole overlay in once the compositor has placed the window.
     opacity: backend.placed && !win.closing ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 160 } }
 
-    // Clicking anywhere outside the ring closes, like every launcher.
     MouseArea {
         anchors.fill: parent
         onClicked: (mouse) => {
             if (Date.now() - root.openedAt < 300)
                 return
             const dx = mouse.x - root.centerX, dy = mouse.y - root.centerY
-            if (Math.hypot(dx, dy) > root.ringRadius + 35)
+            if (Math.hypot(dx, dy) > root.ringRadius + 45)
                 win.closeOrbit()
         }
     }
 
-    // A nested orbit opens around the folder cell that was clicked, clamped
-    // so the whole child ring stays on screen — a ring hanging off the edge
-    // would turn its far side into "outside" clicks that close the overlay.
-    // The ring being left stays exactly where it is, as a blurred copy under
-    // the active ring; the click that opened the folder replaces it.
     function enterFolder(index) {
         const depth = backend.breadcrumb.length - 1
         levelCenters[depth] = { x: centerX, y: centerY }
@@ -85,7 +60,7 @@ Item {
         ghostY = centerY
         ghostShown = true
         const angle = -Math.PI / 2 + index * 2 * Math.PI / Math.max(count, 1)
-        const margin = ringRadius + 40
+        const margin = ringRadius + 60
         centerX = Math.min(Math.max(centerX + ringRadius * Math.cos(angle), margin), win.width - margin)
         centerY = Math.min(Math.max(centerY + ringRadius * Math.sin(angle), margin), win.height - margin)
         backend.enter(index)
@@ -93,7 +68,7 @@ Item {
 
     function leaveFolder() {
         const depth = backend.breadcrumb.length - 1
-        ghostShown = false // the returning ring pops in under the fading ghost
+        ghostShown = false
         if (depth > 0 && levelCenters[depth - 1]) {
             centerX = levelCenters[depth - 1].x
             centerY = levelCenters[depth - 1].y
@@ -114,23 +89,16 @@ Item {
         onFinished: { ringContent.scale = 1; ringContent.opacity = 1 }
     }
 
-    // The level just left, parked exactly where it was: a frozen copy of the
-    // ring (cells and center), blurred and dimmed under the active ring. It
-    // is drawn from a captured copy of the items, so it never follows the
-    // live model, and it fades away as the active ring returns to it.
     Item {
         id: ghost
-        x: root.ghostX - root.ringRadius - 55
-        y: root.ghostY - root.ringRadius - 55
-        width: (root.ringRadius + 110) * 2
-        height: (root.ringRadius + 110) * 2
+        x: root.ghostX - root.ringRadius - 70
+        y: root.ghostY - root.ringRadius - 70
+        width: (root.ringRadius + 140) * 2
+        height: (root.ringRadius + 140) * 2
         visible: opacity > 0.01
         opacity: root.ghostShown ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 200 } }
 
-        // Blurred and slightly dimmed: clearly a layer behind, never a
-        // second active menu. The blur comes from a layer, because a
-        // MultiEffect that samples a hidden item gets an empty texture.
         Item {
             id: ghostRing
             anchors.fill: parent
@@ -144,7 +112,6 @@ Item {
                 brightness: -0.3
             }
 
-            // Ring origin: the ghost cells are laid out around this point.
             Item {
                 x: ghostRing.width / 2
                 y: ghostRing.height / 2
@@ -152,17 +119,17 @@ Item {
                 height: 1
 
                 Rectangle {
-                    width: 44; height: 44
-                    x: -44; y: -44
-                    radius: 22
+                    width: 56; height: 56
+                    x: -28; y: -28
+                    radius: 28
                     color: Qt.rgba(0, 0, 0, 0.35)
                     border.width: 1
                     border.color: theme.accent
                     Image {
                         anchors.centerIn: parent
                         source: root.ghostNested ? "image://icons/go-previous" : "qrc:/orbit.svg"
-                        sourceSize: Qt.size(42, 42)
-                        width: 42; height: 42
+                        sourceSize: Qt.size(54, 54)
+                        width: 54; height: 54
                         fillMode: Image.PreserveAspectFit
                     }
                 }
@@ -200,14 +167,16 @@ Item {
                         }
                         Rectangle {
                             visible: modelData.folder && modelData.count > 0
-                            width: 10; height: 10; radius: 5
-                            x: root.ghostCellSize - 18
-                            y: root.ghostCellSize - 13
+                            width: 16; height: 16; radius: 8
+                            x: root.ghostCellSize - 14
+                            y: root.ghostCellSize - 14
                             color: theme.accent
+                            border.width: 1
+                            border.color: Qt.rgba(0, 0, 0, 0.6)
                             Label {
                                 anchors.centerIn: parent
                                 text: modelData.count > 9 ? "9+" : modelData.count
-                                font.pixelSize: 5
+                                font.pixelSize: 9
                                 font.bold: true
                                 color: theme.accentForeground
                             }
@@ -233,12 +202,10 @@ Item {
 
     Item {
         id: ringContent
-        width: 1; height: 1 // only a container; cells position themselves absolutely
+        width: 1; height: 1
         x: root.centerX
         y: root.centerY
 
-        // A line from the center to the hovered cell, with a pulse running
-        // along it toward the icon.
         Item {
             id: hoverLine
             visible: root.hoveredIndex >= 0
@@ -247,9 +214,9 @@ Item {
             rotation: root.hoveredAngle * 180 / Math.PI
 
             Rectangle {
-                x: 46
+                x: 32
                 y: -1
-                width: Math.max(0, root.ringRadius - 23)
+                width: Math.max(0, root.ringRadius - root.cellSize / 2 - 32)
                 height: 2
                 opacity: 0.55
                 gradient: Gradient {
@@ -266,7 +233,7 @@ Item {
                 SequentialAnimation on x {
                     running: hoverLine.visible
                     loops: Animation.Infinite
-                    NumberAnimation { from: 23; to: root.ringRadius - 3; duration: 550; easing.type: Easing.InOutQuad }
+                    NumberAnimation { from: 32; to: root.ringRadius - root.cellSize / 2 + 8; duration: 550; easing.type: Easing.InOutQuad }
                     PauseAnimation { duration: 120 }
                 }
                 SequentialAnimation on opacity {
@@ -280,11 +247,11 @@ Item {
             }
         }
 
-        // The center opens Settings at the root and goes back inside a folder.
         AbstractButton {
             id: center
-            width: 44; height: 44
-            x: -44; y: -44
+            width: 56; height: 56
+            x: -width / 2
+            y: -height / 2
             hoverEnabled: true
             HoverHandler { cursorShape: Qt.PointingHandCursor }
             onClicked: backend.breadcrumb.length > 1
@@ -293,8 +260,8 @@ Item {
 
             background: Rectangle {
                 radius: width / 2
-                color: center.hovered ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.35)
-                border.width: 1
+                color: center.hovered ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(0, 0, 0, 0.55)
+                border.width: 2
                 border.color: theme.accent
                 Behavior on color { ColorAnimation { duration: 120 } }
             }
@@ -303,24 +270,25 @@ Item {
                     anchors.centerIn: parent
                     source: backend.breadcrumb.length > 1
                             ? "image://icons/go-previous" : "qrc:/orbit.svg"
-                    sourceSize: Qt.size(42, 42)
-                    width: 42; height: 42
+                    sourceSize: Qt.size(54, 54)
+                    width: 54; height: 54
                     fillMode: Image.PreserveAspectFit
                 }
             }
         }
 
-        // The current folder name under the center, when inside one.
+        // Название текущей папки — над центром, чтобы не наезжать на нижнюю ячейку.
         Label {
             visible: backend.breadcrumb.length > 1
-            y: 56
+            y: 40
             anchors.horizontalCenter: parent.horizontalCenter
             text: backend.currentName
-            font.pixelSize: 12
+            font.pixelSize: 13
             font.bold: true
             color: "#ffffff"
+            style: Text.Outline
+            styleColor: Qt.rgba(0, 0, 0, 0.9)
         }
-
         Repeater {
             model: backend.items
 
@@ -340,7 +308,6 @@ Item {
                 hoverEnabled: true
                 HoverHandler { cursorShape: Qt.PointingHandCursor }
 
-                // Pop-in, staggered like the web orbit (0.34, 1.56, 0.64, 1).
                 property real pop: 0
                 scale: pop
                 SequentialAnimation {
@@ -351,8 +318,6 @@ Item {
 
                 onClicked: {
                     if (modelData.folder) {
-                        // No fold: the ring being left stays on screen as the
-                        // blurred ghost, the child orbit pops around the cell.
                         root.enterFolder(index)
                     } else {
                         root.launchingIndex = index
@@ -393,17 +358,18 @@ Item {
                         source: "image://icons/circle:" + encodeURIComponent(modelData.icon || "application-x-executable")
                         fillMode: Image.PreserveAspectFit
                     }
-                    // Folder cells get a small count badge on the edge.
                     Rectangle {
                         visible: modelData.folder && modelData.count > 0
-                        width: 10; height: 10; radius: 5
-                        x: root.cellSize - 9
-                        y: root.cellSize - 13
+                        width: 16; height: 16; radius: 8
+                        x: root.cellSize - 14
+                        y: root.cellSize - 14
                         color: theme.accent
+                        border.width: 1
+                        border.color: Qt.rgba(0, 0, 0, 0.6)
                         Label {
                             anchors.centerIn: parent
                             text: modelData.count > 9 ? "9+" : modelData.count
-                            font.pixelSize: 5
+                            font.pixelSize: 9
                             font.bold: true
                             color: theme.accentForeground
                         }
@@ -423,7 +389,6 @@ Item {
                     }
                 }
 
-                // The "ping" ring on the hovered cell, straight from orbit2.
                 Rectangle {
                     visible: cell.hovered && !modelData.folder
                     anchors.centerIn: parent
