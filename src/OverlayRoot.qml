@@ -9,10 +9,10 @@ Item {
     property real centerY: win.cy
     property var levelCenters: []
     readonly property int count: backend.items.length
-    readonly property real ringRadius: 150
+    readonly property real ringRadius: 130
     readonly property int cellSize: count > 0
-        ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / count) - 8))
-        : 66
+        ? Math.max(40, Math.min(52, Math.floor(2 * Math.PI * ringRadius / count) - 8))
+        : 52
     readonly property int cellIconSize: cellSize
     property int launchingIndex: -1
     property int hoveredIndex: -1
@@ -22,8 +22,8 @@ Item {
     property real ghostY: 0
     property bool ghostShown: false
     readonly property int ghostCellSize: ghostItems.length > 0
-        ? Math.max(44, Math.min(66, Math.floor(2 * Math.PI * ringRadius / ghostItems.length) - 8))
-        : 66
+        ? Math.max(40, Math.min(52, Math.floor(2 * Math.PI * ringRadius / ghostItems.length) - 8))
+        : 52
     readonly property real hoveredAngle: hoveredIndex >= 0
         ? -Math.PI / 2 + hoveredIndex * 2 * Math.PI / Math.max(count, 1) : 0
     property var pendingCall: null
@@ -277,7 +277,7 @@ Item {
             }
         }
 
-        // Название текущей папки — над центром, чтобы не наезжать на нижнюю ячейку.
+        // Название текущей папки — под центром.
         Label {
             visible: backend.breadcrumb.length > 1
             y: 40
@@ -289,6 +289,7 @@ Item {
             style: Text.Outline
             styleColor: Qt.rgba(0, 0, 0, 0.9)
         }
+
         Repeater {
             model: backend.items
 
